@@ -11,8 +11,14 @@ class PepsiCoin:
         self.wallets = {}
 
     def create_genesis(self):
-        return {"index": 0, "prev": "0", "tx": ["Genesis Block - Let there be $PEPSI"], 
-                "miner": "Satoshi", "hash": "0000pepsi", "time": time.time()}
+        return {
+            "index": 0, 
+            "prev": "0", 
+            "tx": ["Genesis Block - Let there be $PEPSI 🥤"], 
+            "miner": "Satoshi", 
+            "hash": "0000pepsi", 
+            "time": time.time()
+        }
 
     def create_wallet(self, name):
         wallet = {
@@ -21,9 +27,14 @@ class PepsiCoin:
             "balance": 69420069 if name == "PeterAkintade" else 0
         }
         self.wallets[name] = wallet
+        print(f"🆕 Wallet created: {name} | Address: {wallet['address']}")
         return wallet
 
     def add_transaction(self, sender, recipient, amount, memo="to the moon fr fr 🥤"):
+        if sender in self.wallets and self.wallets[sender]["balance"] < amount:
+            print(f"❌ Insufficient balance for {sender}")
+            return False
+        
         self.pending_transactions.append({
             "from": sender,
             "to": recipient,
@@ -31,12 +42,24 @@ class PepsiCoin:
             "memo": memo,
             "time": time.time()
         })
+        
+        # Update balances
+        if sender in self.wallets:
+            self.wallets[sender]["balance"] -= amount
+        if recipient in self.wallets:
+            self.wallets[recipient]["balance"] += amount
+        else:
+            self.create_wallet(recipient)
+            self.wallets[recipient]["balance"] += amount
+            
         print(f"🚀 Tx: {sender} → {recipient} | {amount} $PEPSI | {memo}")
+        return True
 
     def mine_block(self, miner):
         if not self.pending_transactions:
             print("Nothing to mine")
             return
+        
         last = self.chain[-1]
         block = {
             "index": len(self.chain),
@@ -47,8 +70,9 @@ class PepsiCoin:
             "nonce": 0
         }
         
-        print(f"⛏️ Mining Block {block['index']}...")
+        print(f"⛏️ Mining $PEPSI Block {block['index']}...")
         target = "0" * self.difficulty
+        
         while True:
             h = hashlib.sha256(json.dumps(block, sort_keys=True).encode()).hexdigest()
             if h.startswith(target):
@@ -63,23 +87,37 @@ class PepsiCoin:
     def show_balance(self, name):
         wallet = self.wallets.get(name)
         if wallet:
-            print(f"💰 {name}'s balance: {wallet['balance']} $PEPSI")
+            print(f"💰 {name}'s balance: {wallet['balance']:,} $PEPSI")
+        else:
+            print(f"Wallet {name} not found")
 
-# === RUN ===
+    def show_chain(self):
+        print("\n=== $PEPSI LIVE BLOCKCHAIN ===")
+        for b in self.chain:
+            print(f"Block #{b['index']} | Hash: {b['hash'][:16]}... | Miner: {b['miner']}")
+            if b['index'] > 0:
+                for tx in b['tx']:
+                    print(f"   └─ {tx['from']} → {tx['to']} | {tx['amount']} $PEPSI | {tx.get('memo','')}")
+
+# === RUN THE COIN ===
 if __name__ == "__main__":
     pepsi = PepsiCoin()
-    peter = pepsi.create_wallet("PeterAkintade")
-    grok = pepsi.create_wallet("GrokArmy")
     
-    pepsi.add_transaction("Genesis", "PeterAkintade", 69420069, "Founder bag")
+    peter = pepsi.create_wallet("PeterAkintade")
+    raiders = pepsi.create_wallet("PepsiRaiders")
+    
+    pepsi.add_transaction("Genesis", "PeterAkintade", 69420069, "Founder bag + jet fuel")
     pepsi.mine_block("PeterAkintade")
     
-    pepsi.add_transaction("PeterAkintade", "GrokArmy", 4206900, "AI raid fund")
-    pepsi.mine_block("GrokArmy")
+    pepsi.add_transaction("PeterAkintade", "PepsiRaiders", 4206900, "Raid fund")
+    pepsi.mine_block("PeterAkintade")
+    
+    # Extra test
+    pepsi.add_transaction("PeterAkintade", "PepsiRaiders", 1000000, "More fuel for the war")
+    pepsi.mine_block("PeterAkintade")
     
     pepsi.show_balance("PeterAkintade")
-    pepsi.show_balance("GrokArmy")
+    pepsi.show_balance("PepsiRaiders")
+    pepsi.show_chain()
     
-    print("\n=== $PEPSI LIVE CHAIN ===")
-    for b in pepsi.chain:
-        print(f"Block #{b['index']} | {b['hash'][:16]}... | Miner: {b['miner']}")
+    print("\n$PEPSI is alive and refreshing 🥤💣")
