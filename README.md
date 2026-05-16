@@ -1,26 +1,32 @@
 # $PEPSI 🥤💣
 
-**The Official Memetic Warfare Coin**
+**Digital Cola • Memetic Warfare Coin**
 
-Bitcoin tried to be serious money.  
-We are here to be **addictive chaos**.
-
-### Why $PEPSI exists
-- Because the timeline needs refreshment
-- Because normies need to be liquidated
-- Because cola > gold
-
-### Tokenomics (Locked in stone)
-- Total Supply: **420,690,000,000**
-- 0% tax (we only tax souls)
-- Founder bag: 69,420,069 $PEPSI (PeterAkintade)
-- War chest: For raids, memes & destruction
+Bitcoin had 10 years.  
+We only need 10 days.
 
 ### Current Status
-- Blockchain: Working (Proof of Work)
-- Mined on mobile phone 💯
-- Ready for world domination
+- ✅ Blockchain fully working  
+- ✅ Mined entirely on mobile phone  
+- ✅ Real balances & transactions  
+- ✅ Stealth mode activated
 
-### How to run locally
+**Who’s buying the dip when we list?**  
+Reply with 🥤 if you’re in.
+
+### How to Run
 ```bash
-python pepsi.py
+python pepsi.pyTokenomicsTotal Supply: 420,690,000,000 $PEPSI  
+
+Taxes: 0% (we only tax souls)  
+
+Founder: PeterAkintade
+
+
+
+To the moon. No chaser.
+
+$PEPSI season is here.
+
+
+
