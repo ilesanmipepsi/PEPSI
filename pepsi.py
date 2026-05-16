@@ -43,7 +43,6 @@ class PepsiCoin:
             "time": time.time()
         })
         
-        # Update balances
         if sender in self.wallets:
             self.wallets[sender]["balance"] -= amount
         if recipient in self.wallets:
@@ -70,8 +69,9 @@ class PepsiCoin:
             "nonce": 0
         }
         
-        print(f"⛏️ Mining $PEPSI Block {block['index']}...")
+        print(f"⛏️ Mining $PEPSI Block {block['index']}... (Difficulty: {self.difficulty})")
         target = "0" * self.difficulty
+        start_time = time.time()
         
         while True:
             h = hashlib.sha256(json.dumps(block, sort_keys=True).encode()).hexdigest()
@@ -79,10 +79,14 @@ class PepsiCoin:
                 block["hash"] = h
                 break
             block["nonce"] += 1
+            # Auto adjust difficulty every 3 blocks
+            if block["index"] % 3 == 0 and block["index"] > 0:
+                self.difficulty = max(3, self.difficulty + 1)
         
         self.chain.append(block)
         self.pending_transactions = []
         print(f"✅ Block {block['index']} mined by {miner}! Hash: {h[:20]}...")
+        print(f"⏱️  Took {time.time() - start_time:.2f} seconds")
 
     def show_balance(self, name):
         wallet = self.wallets.get(name)
@@ -95,9 +99,11 @@ class PepsiCoin:
         print("\n=== $PEPSI LIVE BLOCKCHAIN ===")
         for b in self.chain:
             print(f"Block #{b['index']} | Hash: {b['hash'][:16]}... | Miner: {b['miner']}")
-            if b['index'] > 0:
+            if b.get('tx') and isinstance(b['tx'], list) and len(b['tx']) > 0 and isinstance(b['tx'][0], dict):
                 for tx in b['tx']:
                     print(f"   └─ {tx['from']} → {tx['to']} | {tx['amount']} $PEPSI | {tx.get('memo','')}")
+            elif b.get('tx'):
+                print(f"   └─ Genesis: {b['tx']}")
 
 # === RUN THE COIN ===
 if __name__ == "__main__":
@@ -112,12 +118,11 @@ if __name__ == "__main__":
     pepsi.add_transaction("PeterAkintade", "PepsiRaiders", 4206900, "Raid fund")
     pepsi.mine_block("PeterAkintade")
     
-    # Extra test
-    pepsi.add_transaction("PeterAkintade", "PepsiRaiders", 1000000, "More fuel for the war")
+    pepsi.add_transaction("PeterAkintade", "PepsiRaiders", 2500000, "More war chest")
     pepsi.mine_block("PeterAkintade")
     
     pepsi.show_balance("PeterAkintade")
     pepsi.show_balance("PepsiRaiders")
     pepsi.show_chain()
     
-    print("\n$PEPSI is alive and refreshing 🥤💣")
+    print("\n$PEPSI v0.6 Stealth Raider Edition is LIVE 🥤💣")
