@@ -1,8 +1,9 @@
 import hashlib
 import time
 import json
-import secrets
 import os
+from http.server import HTTPServer, BaseHTTPRequestHandler
+import threading
 
 class PepsiCoin:
     def __init__(self, filename="pepsi_chain.json"):
@@ -30,7 +31,7 @@ class PepsiCoin:
                     data = json.load(f)
                     self.chain = data.get("chain", [self.create_genesis()])
                     self.wallets = data.get("wallets", {})
-                print(f"✅ Loaded {len(self.chain)} blocks from disk")
+                print(f"✅ Loaded {len(self.chain)} blocks")
             except:
                 self.chain = [self.create_genesis()]
         else:
@@ -44,19 +45,17 @@ class PepsiCoin:
     def create_wallet(self, name):
         if name in self.wallets:
             return self.wallets[name]
-        
         wallet = {
             "name": name,
             "address": hashlib.sha256(name.encode()).hexdigest()[:16],
             "balance": 69420069 if name == "PeterAkintade" else 0
         }
         self.wallets[name] = wallet
-        print(f"🆕 Wallet: {name} | Addr: {wallet['address']}")
         return wallet
 
     def add_transaction(self, sender, recipient, amount, memo="to the moon fr fr 🥤"):
         if sender in self.wallets and self.wallets[sender]["balance"] < amount:
-            print(f"❌ Not enough $PEPSI in {sender}")
+            print(f"❌ Insufficient balance for {sender}")
             return False
         
         self.pending_transactions.append({
@@ -72,8 +71,7 @@ class PepsiCoin:
         if recipient not in self.wallets:
             self.create_wallet(recipient)
         self.wallets[recipient]["balance"] += amount
-        
-        print(f"🚀 Sent {amount:,} $PEPSI → {recipient}")
+        print(f"🚀 {sender} → {recipient} | {amount:,} $PEPSI")
         return True
 
     def mine_block(self, miner):
@@ -91,10 +89,7 @@ class PepsiCoin:
             "nonce": 0
         }
         
-        print(f"⛏️ Mining Block {block['index']} (Difficulty: {self.difficulty})...")
         target = "0" * self.difficulty
-        start = time.time()
-        
         while True:
             h = hashlib.sha256(json.dumps(block, sort_keys=True).encode()).hexdigest()
             if h.startswith(target):
@@ -104,50 +99,104 @@ class PepsiCoin:
         
         self.chain.append(block)
         self.pending_transactions = []
-        print(f"✅ Block mined! Hash: {h[:20]}...")
-        print(f"⏱️ Took {time.time() - start:.2f}s")
-        
         self.save_chain()
+        print(f"✅ Block {block['index']} mined by {miner}!")
         return True
 
-    def show_balance(self, name):
-        w = self.wallets.get(name)
-        if w:
-            print(f"💰 {name}: {w['balance']:,} $PEPSI")
-        else:
-            print(f"Wallet {name} not found")
+# === BEAUTIFUL WEB DASHBOARD ===
+class PepsiHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.send_header("Content-type", "text/html")
+        self.end_headers()
+        
+        html = f"""
+        <html>
+        <head>
+            <title>$PEPSI Live</title>
+            <style>
+                body {{ font-family: monospace; background: #0a0a0a; color: #00ff88; padding: 20px; margin: 0; }}
+                h1 {{ color: #00ffff; text-align: center; }}
+                .card {{ background: #111111; padding: 18px; border-radius: 12px; margin: 15px 0; box-shadow: 0 0 10px rgba(0,255,100,0.2); }}
+                pre {{ background: #000; padding: 15px; border-radius: 8px; overflow-x: auto; }}
+                .refresh {{ color: #00ffcc; font-size: 0.9em; }}
+            </style>
+        </head>
+        <body>
+        <h1>🥤 $PEPSI LIVE BLOCKCHAIN</h1>
+        
+        <div class="card">
+            <strong>Total Blocks:</strong> {len(pepsi.chain)}
+        </div>
+        
+        <div class="card">
+            <strong>Holders:</strong><br>
+            <pre>"""
+        
+        for name, w in sorted(pepsi.wallets.items(), key=lambda x: x[1]['balance'], reverse=True):
+            html += f"{name}: {w['balance']:,} $PEPSI\n"
+        
+        html += """</pre>
+        </div>
+        
+        <div class="card">
+            <strong>Recent Blocks:</strong><br>
+            <pre>"""
+        
+        for b in pepsi.chain[-8:]:
+            html += f"#{b['index']} | {b['hash'][:16]}... | {b['miner']}\n"
+        
+        html += """</pre>
+        </div>
+        
+        <p class="refresh">Refresh this page after mining • $PEPSI v1.3 • Built on mobile phone 💯</p>
+        </body>
+        </html>"""
+        self.wfile.write(html.encode())
 
-    def show_chain(self):
-        print("\n=== $PEPSI BLOCKCHAIN ===")
-        for b in self.chain:
-            print(f"Block #{b['index']} | {b['hash'][:16]}... | Miner: {b['miner']}")
-            if isinstance(b.get('tx'), list) and len(b['tx']) > 0 and isinstance(b['tx'][0], dict):
-                for tx in b['tx']:
-                    print(f"   └─ {tx['from']} → {tx['to']} | {tx['amount']:,} $PEPSI")
-
-    def show_all(self):
-        print("\n💎 $PEPSI HOLDERS:")
-        for name, w in sorted(self.wallets.items(), key=lambda x: x[1]['balance'], reverse=True):
-            print(f"   {name}: {w['balance']:,} $PEPSI")
-
-# === INTERACTIVE MODE ===
+# === MAIN ===
 if __name__ == "__main__":
+    global pepsi
     pepsi = PepsiCoin()
     
     pepsi.create_wallet("PeterAkintade")
     pepsi.create_wallet("PepsiRaiders")
     
-    print("\n🚀 $PEPSI v0.8 Command Raider Edition")
-    print("Type commands or run transactions below:\n")
+    print("\n🚀 $PEPSI v1.3 Polished Raider Edition")
     
-    pepsi.add_transaction("Genesis", "PeterAkintade", 69420069, "Founder bag")
-    pepsi.mine_block("PeterAkintade")
-    
-    pepsi.add_transaction("PeterAkintade", "PepsiRaiders", 4206900, "Raid fund")
-    pepsi.mine_block("PeterAkintade")
-    
-    pepsi.show_all()
-    pepsi.show_chain()
-    
-    print("\n$PEPSI is now persistent and interactive 🥤💣")
-    print("You can keep adding transactions and mining blocks!")
+    try:
+        server = HTTPServer(('0.0.0.0', 8000), PepsiHandler)
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        print("🌐 Dashboard live at → http://localhost:8000")
+        print("                   → http://127.0.0.1:8000")
+    except Exception as e:
+        print("Web server note:", str(e)[:80])
+
+    # Initial setup
+    if pepsi.wallets["PepsiRaiders"]["balance"] < 10000000:
+        pepsi.add_transaction("PeterAkintade", "PepsiRaiders", 10000000)
+        pepsi.mine_block("PeterAkintade")
+
+    # Interactive commands
+    while True:
+        print("\n1: Send   2: Mine   3: Status   4: Exit")
+        choice = input("Choice: ").strip()
+        
+        if choice == "1":
+            s = input("From: ").strip()
+            r = input("To: ").strip()
+            try:
+                amt = int(input("Amount: ").strip())
+                pepsi.add_transaction(s, r, amt)
+            except:
+                print("Invalid amount")
+        elif choice == "2":
+            m = input("Miner (default: PeterAkintade): ").strip() or "PeterAkintade"
+            pepsi.mine_block(m)
+        elif choice == "3":
+            for name, w in sorted(pepsi.wallets.items(), key=lambda x: x[1]['balance'], reverse=True):
+                print(f"{name}: {w['balance']:,} $PEPSI")
+        elif choice == "4":
+            print("👋 $PEPSI chain saved securely.")
+            break
